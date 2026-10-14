@@ -14,7 +14,9 @@ contract Handler is Test {
 
     constructor(AgentTrustRegistry r) {
         reg = r;
-        for (uint256 i = 1; i <= 8; i++) actors.push(address(uint160(0x1000 + i)));
+        for (uint256 i = 1; i <= 8; i++) {
+            actors.push(address(uint160(0x1000 + i)));
+        }
     }
 
     function register(uint256 actorSeed) external {
@@ -59,8 +61,9 @@ contract AgentTrustRegistryInvariantTest is Test {
             (uint256 avg, uint256 c) = reg.reputation(id);
             assertEq(c, h.ghostCount(id));
             assertEq(c, reg.feedbackCount(id));
-            if (c == 0) assertEq(avg, 0);
-            else {
+            if (c == 0) {
+                assertEq(avg, 0);
+            } else {
                 assertGe(avg, 100);
                 assertLe(avg, 10000);
                 assertEq(avg, h.ghostSum(id) * 100 / c);
@@ -75,7 +78,9 @@ contract AgentTrustRegistryInvariantTest is Test {
         for (uint256 id = 1; id <= reg.agentCount(); id++) {
             AgentTrustRegistry.Feedback[] memory f = reg.getFeedback(id);
             address o = reg.getAgent(id).owner;
-            for (uint256 i; i < f.length; i++) assertTrue(f[i].reviewer != o);
+            for (uint256 i; i < f.length; i++) {
+                assertTrue(f[i].reviewer != o);
+            }
         }
     }
 }

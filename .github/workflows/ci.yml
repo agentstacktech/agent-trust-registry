@@ -2,25 +2,44 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   foundry:
+    name: Foundry project
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          persist-credentials: false
       - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
       - name: Install forge-std if missing
-        run: test -d lib/forge-std || forge install foundry-rs/forge-std --no-git
-      - run: forge fmt --check src || true
+        run: test -f lib/forge-std/src/Test.sol || forge install foundry-rs/forge-std --no-git
+      - run: forge --version
+      # src/ kept byte-identical to the Sourcify-verified deployment, so only test/ and script/ are format-checked
+      - run: forge fmt --check test script
       - run: forge build --sizes
       - run: forge test -vvv
   sdk:
+    name: SDK (live Monad testnet RPC)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: sdk/package-lock.json
       - working-directory: sdk
-        run: npm install --no-audit --no-fund && npm test
+        run: npm ci --no-audit --no-fund
+      - name: Live RPC tests (retried; public RPC can be flaky)
+        working-directory: sdk
+        run: for i in 1 2 3; do npm test && exit 0; echo "retry $i"; sleep 10; done; exit 1
