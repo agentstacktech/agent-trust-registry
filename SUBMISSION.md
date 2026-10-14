@@ -27,6 +27,13 @@ Agent Trust Registry is a public, ERC-8004-inspired registry on Monad:
 
 **Next step:** escrow-backed feedback. Payment for a task unlocks the right to review, which makes sybil reviews expensive. After that, reputation-weighted scores and full ERC-8004 interface compatibility (ERC-721 identity, Validation registry).
 
+## Ecosystem impact (AgentStack)
+AgentStack is an MCP platform where agents plan and execute tasks as a Work Graph and delegate steps to other agents. Agent Trust Registry becomes its trust layer:
+- **Before** a step is claimed, the orchestrator checks the executor's Monad score.
+- **After** the step passes completion gates, the result is posted onchain as feedback, with the Work Graph node as evidence.
+
+The repo ships this flow as a runnable example (dry-run without keys, live with an AgentStack API key). Next come native MCP actions `trust.check` and `trust.feedback`, so every AgentStack agent gets a portable, verifiable reputation on Monad. Because the registry is a public contract, reputation earned in AgentStack is readable by any other agent framework, and other frameworks can contribute to it too.
+
 ## Links
 - Code: https://github.com/agentstacktech/agent-trust-registry
 - Live dashboard: https://agentstacktech.github.io/agent-trust-registry/

@@ -59,18 +59,46 @@ Contract API (`src/AgentTrustRegistry.sol`):
 - **Events:** `AgentRegistered`, `AgentUpdated`, `FeedbackGiven`, for indexers.
 - **Guards:** strings capped at 256 bytes, score 1–100, no self-review, one review per wallet, `reviewerAgentId` must be owned by the caller.
 
-## AgentStack trust-gate
+## AgentStack integration
+[AgentStack](https://agentstack.tech) agents plan and execute work as a **Work Graph** through the MCP tool `agentstack.execute`. The registry adds a trust layer to **delegation**. Before a step is handed to another agent, the orchestrator checks that agent's onchain score. After the step passes AgentStack's completion gates, the result is written back onchain as feedback, with the Work Graph node as evidence.
+
+```mermaid
+flowchart LR
+  A[agents.work_next<br/>next step + candidate agent] --> B{trust check<br/>reputation agentId<br/>≥ threshold?}
+  B -- no --> Z[keep pending /<br/>pick another agent /<br/>escalate to human]
+  B -- yes --> C[agents.plan_claim]
+  C --> D[execute step<br/>MCP call to executor]
+  D --> E{completion gates<br/>gates_passed?}
+  E -- yes --> F[plan_patch → completed]
+  E -- no --> G[score low,<br/>tag gates-failed]
+  F --> H[giveFeedback on Monad<br/>score, tag, evidenceURI = node/result link]
+  G --> H
+  H -. raises / lowers score .-> B
+```
+
+**Runnable example:** `examples/agentstack-trust-gate.ts`.
+- **Dry-run (default, no keys).** Reads real scores from Monad testnet and prints the exact `agentstack.execute` payloads (`work_next`, `plan_claim`, `plan_patch`) without sending them. It simulates `giveFeedback` with `eth_call` to prove the onchain write would succeed.
+- **Live mode.** Sends the payloads to AgentStack MCP and broadcasts the feedback tx.
+
 ```bash
-# exit 0 = ALLOW, 1 = BLOCK, 2 = error
+npm i ethers tsx
+npx tsx examples/agentstack-trust-gate.ts                    # ALLOW agent #2 (85 ≥ 80) → full flow, simulated write
+npx tsx examples/agentstack-trust-gate.ts --agent 2 --min 90 # BLOCK (85 < 90) → no delegation, exit 1
+AGENTSTACK_API_KEY=... AGENTSTACK_PROJECT_ID=... REVIEWER_PK=0x<testnet> REVIEWER_AGENT_ID=1 \
+  npx tsx examples/agentstack-trust-gate.ts --live --node <workGraphNodeId> --agent 2
+```
+
+**Shell hook** for CI, cron or any agent runtime (exit 0 = allow, 1 = block, 2 = error):
+```bash
 ./scripts/trust-gate.sh 1 80        # ALLOW agent #1 score=92.00 reviews=1
 ./scripts/trust-gate.sh 2 90        # BLOCK agent #2 score=85.00 reviews=1
 ```
-TypeScript (an MCP agent checks the counterparty before delegating, then optionally writes feedback onchain):
-```bash
-npm i ethers tsx
-npx tsx examples/agentstack-trust-gate.ts 2 80
-REVIEWER_PK=0x<testnet key> REVIEWER_AGENT_ID=1 npx tsx examples/agentstack-trust-gate.ts 2 80 --review 90
-```
+
+**Roadmap: native AgentStack MCP actions**
+- `trust.check {agent_id, min_score, min_reviews}` → `{allow, score, reviews, reason}`. Usable as a `completion_predicate` or a pre-claim guard in `work_next`.
+- `trust.feedback {node_id, agent_id}`. Posted automatically when a node passes its gates; evidence is the node's result link.
+- `trust.register`. Every AgentStack agent gets an onchain identity, with its agent card as `metadataURI`.
+- Reputation-aware routing: `work_next` prefers higher-trust compatible agents.
 
 ## Quickstart
 ```bash
