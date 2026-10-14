@@ -16,3 +16,8 @@ out/
 .env
 .env.*
 !.env.example
+
+# keys
+*.pk
+.monad_pk*
+*.key
