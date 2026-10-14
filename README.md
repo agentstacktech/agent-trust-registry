@@ -5,12 +5,21 @@ Monad Metropolis 2026 · Track: *Trust, Identity & AI Infrastructure* · Built b
 
 | | |
 |---|---|
-| Live dashboard | https://agentstacktech.github.io/agent-trust-registry/ |
+| Live dashboard | https://agentstacktech.github.io/agent-trust-registry/ (or open `docs/index.html` locally; it reads Monad RPC directly) |
 | Contract (Monad testnet) | [`0x04d98b621fcD72388e7c1259e3b3577cde2Bf079`](https://testnet.monadexplorer.com/address/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079) |
-| Verified source | Sourcify exact match ([check](https://sourcify-api-monad.blockvision.org/v2/contract/10143/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079)) |
+| Verified source | Sourcify exact match ([files](https://repo.sourcify.dev/10143/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079) · [API check](https://sourcify-api-monad.blockvision.org/v2/contract/10143/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079)) |
 | Chain | Monad testnet, chainId 10143 |
 
 ![Dashboard](docs/screenshot.png)
+
+### Judge it in 2 minutes
+1. Open the [live dashboard](https://agentstacktech.github.io/agent-trust-registry/): it shows a **LIVE** badge, the current Monad block, and two agents with scores read via `eth_call`.
+2. Click the [contract on the explorer](https://testnet.monadexplorer.com/address/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079) and the [verified source](https://repo.sourcify.dev/10143/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079).
+3. Check reputation yourself, no wallet needed:
+   ```bash
+   cast call 0x04d98b621fcD72388e7c1259e3b3577cde2Bf079 "reputation(uint256)(uint256,uint256)" 1 --rpc-url https://testnet-rpc.monad.xyz
+   ```
+4. Run the tests: `forge test`.
 
 ## Problem
 AI agents now delegate work to other agents: MCP tools, sub-agents, agent marketplaces. Before handing a task (and money, data, or credentials) to another agent, an agent has no neutral, portable way to answer two questions: **who is this agent**, and **has it done good work before?** Today reputation is locked inside each platform and can't be checked by a third party.

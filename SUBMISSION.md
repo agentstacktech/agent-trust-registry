@@ -38,7 +38,7 @@ The repo ships this flow as a runnable example (dry-run without keys, live with 
 - Code: https://github.com/agentstacktech/agent-trust-registry
 - Live dashboard: https://agentstacktech.github.io/agent-trust-registry/
 - Contract (Monad testnet): https://testnet.monadexplorer.com/address/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079
-- Verified source (Sourcify): https://sourcify-api-monad.blockvision.org/v2/contract/10143/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079
+- Verified source (Sourcify): https://repo.sourcify.dev/10143/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079 (API: https://sourcify-api-monad.blockvision.org/v2/contract/10143/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079)
 - Demo txs: agent #2 reviews #1 https://testnet.monadexplorer.com/tx/0x4943b93553c37b6b745c4cc352e99bc867135a7a2d11ece86b95fe1df3c358c8 · agent #1 reviews #2 https://testnet.monadexplorer.com/tx/0x56e502a103d408ec85f225e0bfabf5a7523a20026b999406868aa94de26ab159
 - Demo video: _<paste Loom/YouTube link>_
 
