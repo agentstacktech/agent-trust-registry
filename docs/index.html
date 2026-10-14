@@ -26,18 +26,21 @@ const DEFAULT_ADDRESS = ""; // set after deployment
 const MOCK = [
  {id:1,owner:"0x1111111111111111111111111111111111111111",name:"agentstack-planner",metadataURI:"https://agentstack.tech",registeredAt:1760400000,active:true,avg:8800,count:2,fb:[{reviewer:"0x2222222222222222222222222222222222222222",reviewerAgentId:2,score:92,tag:"task-completed",evidenceURI:"",timestamp:1760403600},{reviewer:"0x3333333333333333333333333333333333333333",reviewerAgentId:0,score:84,tag:"good-plan",evidenceURI:"",timestamp:1760407200}]},
  {id:2,owner:"0x2222222222222222222222222222222222222222",name:"agentstack-executor",metadataURI:"https://agentstack.tech/mcp",registeredAt:1760401000,active:true,avg:7500,count:1,fb:[{reviewer:"0x1111111111111111111111111111111111111111",reviewerAgentId:1,score:75,tag:"slow-but-correct",evidenceURI:"",timestamp:1760405000}]}];
+const esc = v => String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl = u => /^https?:\/\//i.test(u) ? esc(u) : "";
 const $ = id => document.getElementById(id);
 const short = a => a.slice(0,6)+"…"+a.slice(-4);
 const date = t => new Date(Number(t)*1000).toISOString().slice(0,16).replace("T"," ");
 function render(agents, live, addr){
- $("status").innerHTML = live ? `Live from <a href="${EXPLORER}/address/${addr}" target="_blank">${short(addr)}</a> · ${agents.length} agents` : "Demo data (no contract address given). Add <code>?address=0x…</code> or paste it above.";
+ $("status").innerHTML = live ? `Live from <a href="${EXPLORER}/address/${esc(addr)}" target="_blank">${short(addr)}</a> · ${agents.length} agents` : "Demo data (no contract address given). Add <code>?address=0x…</code> or paste it above.";
  $("list").innerHTML = agents.map(a=>`<div class="card"><span class="score">${a.count? (a.avg/100).toFixed(1):"—"}</span>
- <b>#${a.id} ${a.name}</b> <span class="badge">${a.active?"active":"inactive"}</span> <span class="badge">${a.count} reviews</span><br>
- <span class="muted">owner ${live?`<a target="_blank" href="${EXPLORER}/address/${a.owner}">${short(a.owner)}</a>`:short(a.owner)} · registered ${date(a.registeredAt)} · ${a.metadataURI}</span>
- ${a.fb.map(f=>`<div class="fb">★ ${f.score} by ${short(f.reviewer)}${Number(f.reviewerAgentId)?` (agent #${f.reviewerAgentId})`:""} · ${f.tag} · ${date(f.timestamp)} ${f.evidenceURI?`<a href="${f.evidenceURI}" target="_blank">evidence</a>`:""}</div>`).join("")}</div>`).join("");
+ <b>#${a.id} ${esc(a.name)}</b> <span class="badge">${a.active?"active":"inactive"}</span> <span class="badge">${a.count} reviews</span><br>
+ <span class="muted">owner ${live?`<a target="_blank" href="${EXPLORER}/address/${a.owner}">${short(a.owner)}</a>`:short(a.owner)} · registered ${date(a.registeredAt)} · ${esc(a.metadataURI)}</span>
+ ${a.fb.map(f=>`<div class="fb">★ ${f.score} by ${short(f.reviewer)}${Number(f.reviewerAgentId)?` (agent #${f.reviewerAgentId})`:""} · ${esc(f.tag)} · ${date(f.timestamp)} ${safeUrl(f.evidenceURI)?`<a rel="noopener" href="${safeUrl(f.evidenceURI)}" target="_blank">evidence</a>`:""}</div>`).join("")}</div>`).join("");
 }
 window.load = async function(){
  const addr = $("addr").value.trim();
+ if(addr && !ethers.isAddress(addr)){ $("status").textContent="Invalid address"; return; }
  if(!addr){ render(MOCK,false); return; }
  $("status").textContent = "Loading from Monad testnet…";
  try{

@@ -86,4 +86,20 @@ contract AgentTrustRegistryTest is Test {
         (uint256 avg, uint256 cnt) = reg.reputation(a);
         assertEq(avg + cnt, 0);
     }
+
+    function testPaginationAndLimits() public {
+        uint256 a = _reg(alice, "planner");
+        vm.prank(bob);
+        reg.giveFeedback(a, 0, 10, "", "");
+        vm.prank(carol);
+        reg.giveFeedback(a, 0, 20, "", "");
+        assertEq(reg.feedbackCount(a), 2);
+        assertEq(reg.getFeedbackPage(a, 1, 10).length, 1);
+        assertEq(reg.getFeedbackPage(a, 1, 10)[0].score, 20);
+        assertEq(reg.getFeedbackPage(a, 5, 10).length, 0);
+        bytes memory big = new bytes(257);
+        vm.prank(alice);
+        vm.expectRevert(AgentTrustRegistry.TooLong.selector);
+        reg.update(a, string(big), true);
+    }
 }

@@ -41,6 +41,13 @@ contract AgentTrustRegistry {
     error SelfReview();
     error AlreadyReviewed();
     error EmptyName();
+    error TooLong();
+
+    uint256 public constant MAX_STR = 256;
+
+    function _len(string calldata a) private pure {
+        if (bytes(a).length > MAX_STR) revert TooLong();
+    }
 
     modifier exists(uint256 id) {
         if (id == 0 || id > agentCount) revert UnknownAgent();
@@ -49,6 +56,8 @@ contract AgentTrustRegistry {
 
     function register(string calldata name, string calldata metadataURI) external returns (uint256 id) {
         if (bytes(name).length == 0) revert EmptyName();
+        _len(name);
+        _len(metadataURI);
         id = ++agentCount;
         _agents[id] = Agent(msg.sender, name, metadataURI, uint64(block.timestamp), true, 0, 0);
         _byOwner[msg.sender].push(id);
@@ -58,6 +67,7 @@ contract AgentTrustRegistry {
     function update(uint256 id, string calldata metadataURI, bool active) external exists(id) {
         Agent storage a = _agents[id];
         if (a.owner != msg.sender) revert NotOwner();
+        _len(metadataURI);
         a.metadataURI = metadataURI;
         a.active = active;
         emit AgentUpdated(id, metadataURI, active);
@@ -69,6 +79,8 @@ contract AgentTrustRegistry {
         exists(id)
     {
         if (score == 0 || score > 100) revert InvalidScore();
+        _len(tag);
+        _len(evidenceURI);
         Agent storage a = _agents[id];
         if (a.owner == msg.sender) revert SelfReview();
         if (hasReviewed[id][msg.sender]) revert AlreadyReviewed();
@@ -96,6 +108,24 @@ contract AgentTrustRegistry {
 
     function getFeedback(uint256 id) external view exists(id) returns (Feedback[] memory) {
         return _feedback[id];
+    }
+
+    function feedbackCount(uint256 id) external view exists(id) returns (uint256) {
+        return _feedback[id].length;
+    }
+
+    /// @notice Paginated read to avoid unbounded-array eth_call limits.
+    function getFeedbackPage(uint256 id, uint256 offset, uint256 limit)
+        external
+        view
+        exists(id)
+        returns (Feedback[] memory page)
+    {
+        Feedback[] storage all = _feedback[id];
+        if (offset >= all.length) return new Feedback[](0);
+        uint256 end = offset + limit > all.length ? all.length : offset + limit;
+        page = new Feedback[](end - offset);
+        for (uint256 i = offset; i < end; i++) page[i - offset] = all[i];
     }
 
     function agentsOf(address owner) external view returns (uint256[] memory) {
