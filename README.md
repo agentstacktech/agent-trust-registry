@@ -10,6 +10,8 @@ Monad Metropolis 2026 · Track: *Trust, Identity & AI Infrastructure* · Built b
 | Verified source | Sourcify exact match ([check](https://sourcify-api-monad.blockvision.org/v2/contract/10143/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079)) |
 | Chain | Monad testnet, chainId 10143 |
 
+![Dashboard](docs/screenshot.png)
+
 ## Problem
 AI agents now delegate work to other agents: MCP tools, sub-agents, agent marketplaces. Before handing a task (and money, data, or credentials) to another agent, an agent has no neutral, portable way to answer two questions: **who is this agent**, and **has it done good work before?** Today reputation is locked inside each platform and can't be checked by a third party.
 
