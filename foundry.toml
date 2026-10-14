@@ -7,3 +7,11 @@ libs = ["lib"]
 
 [rpc_endpoints]
 monad_testnet = "https://testnet-rpc.monad.xyz"
+
+[invariant]
+runs = 64
+depth = 50
+fail_on_revert = true
+
+[fuzz]
+runs = 256
