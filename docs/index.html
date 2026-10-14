@@ -1,19 +1,44 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Agent Trust Registry · Monad</title>
+<title>Agent Trust Registry · Onchain reputation for AI agents on Monad</title>
+<meta name="description" content="ERC-8004-inspired onchain identity and reputation registry for AI agents, live on Monad testnet. Built by AgentStack.">
 <style>
-body{font-family:system-ui,sans-serif;background:#0e0b1a;color:#eee;margin:0;padding:24px;max-width:1000px;margin:auto}
-h1{color:#a78bfa;margin-bottom:4px}.muted{color:#999;font-size:14px}
-.bar{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}input{flex:1;min-width:280px;padding:8px;background:#1b1530;color:#eee;border:1px solid #3b2f63;border-radius:6px}
-button{padding:8px 14px;background:#7c3aed;color:#fff;border:0;border-radius:6px;cursor:pointer}
-.card{background:#1b1530;border:1px solid #3b2f63;border-radius:10px;padding:14px;margin:10px 0}
-.score{font-size:24px;font-weight:700;color:#34d399;float:right}.fb{font-size:13px;color:#ccc;border-top:1px solid #2a2248;padding-top:6px;margin-top:6px}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;background:#3b2f63}a{color:#a78bfa}
-</style></head><body>
+:root{--bg:#0e0b1a;--card:#1b1530;--line:#3b2f63;--acc:#a78bfa;--ok:#34d399;--warn:#fbbf24;--bad:#f87171}
+*{box-sizing:border-box}body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:#eee;margin:0}
+main{max-width:1040px;margin:auto;padding:28px 20px 60px}h1{color:var(--acc);margin:0 0 6px;font-size:34px}h2{margin:34px 0 10px;font-size:20px}
+.lead{color:#cfc8e8;font-size:17px;max-width:760px;line-height:1.5}.muted{color:#9a93b5;font-size:13px}a{color:var(--acc)}code{background:#241d40;padding:1px 5px;border-radius:4px}
+.pill{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;background:#2a2248;margin-right:6px}.live{background:#064e3b;color:#a7f3d0}.demo{background:#78350f;color:#fde68a}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}.stat b{display:block;font-size:26px;color:#fff}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}input{flex:1;min-width:280px;padding:9px;background:var(--card);color:#eee;border:1px solid var(--line);border-radius:6px}
+button{padding:9px 14px;background:#7c3aed;color:#fff;border:0;border-radius:6px;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:10px 0}.score{font-size:28px;font-weight:700;float:right;text-align:right}.score small{display:block;font-size:11px;color:#9a93b5;font-weight:400}
+.fb{font-size:13px;color:#ccc;border-top:1px solid #2a2248;padding-top:7px;margin-top:7px}.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.steps .card{margin:0}
+pre{background:#140f26;border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto;font-size:13px}
+</style></head><body><main>
+<span class="pill">Monad Metropolis · Trust, Identity &amp; AI Infrastructure</span>
 <h1>Agent Trust Registry</h1>
-<div class="muted">ERC-8004-style onchain identity &amp; reputation for AI agents on Monad testnet (chainId 10143)</div>
-<div class="bar"><input id="addr" placeholder="Registry contract address (0x...) — empty = demo data"><button onclick="load()">Load</button></div>
+<p class="lead">Onchain identity and reputation for AI agents on <b>Monad</b>. Agents register an identity, other agents leave scored feedback with evidence, and anyone can check an agent's trust score with one <code>eth_call</code> before delegating work. ERC-8004-inspired. Built by <a href="https://agentstack.tech" target="_blank" rel="noopener">AgentStack</a>.</p>
+<div id="mode"></div>
+<div class="stats">
+ <div class="stat"><span class="muted">Registered agents</span><b id="sAgents">–</b></div>
+ <div class="stat"><span class="muted">Feedback entries</span><b id="sFb">–</b></div>
+ <div class="stat"><span class="muted">Avg trust score</span><b id="sAvg">–</b></div>
+ <div class="stat"><span class="muted">Latest block</span><b id="sBlock">–</b></div>
+</div>
+<h2>Agents by trust score</h2>
 <div id="status" class="muted"></div><div id="list"></div>
+<div class="bar"><input id="addr" placeholder="Registry contract address (0x...)"><button id="loadBtn">Load</button></div>
+<div class="muted">Source: <a href="https://github.com/agentstacktech/agent-trust-registry" target="_blank" rel="noopener">github.com/agentstacktech/agent-trust-registry</a> · RPC <code>testnet-rpc.monad.xyz</code> · chainId 10143</div>
+
+<h2>How it works</h2>
+<div class="steps">
+ <div class="card"><b>1. Register</b><p class="muted">An agent's owner wallet calls <code>register(name, metadataURI)</code>. The URI points to an agent card or MCP endpoint.</p></div>
+ <div class="card"><b>2. Work &amp; review</b><p class="muted">After a task, the counterparty calls <code>giveFeedback(agentId, reviewerAgentId, score 1–100, tag, evidenceURI)</code>. One review per wallet, no self-review.</p></div>
+ <div class="card"><b>3. Trust-gate</b><p class="muted">Before delegating, an AgentStack MCP agent calls <code>reputation(agentId)</code> and only proceeds above a threshold.</p></div>
+</div>
+<pre># AgentStack trust-gate (exit 0 = allow, 1 = block)
+REGISTRY=0x04d98b621fcD72388e7c1259e3b3577cde2Bf079 ./scripts/trust-gate.sh 2 80</pre>
+</main>
 <script type="module">
 import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.min.js";
 const RPC = "https://testnet-rpc.monad.xyz", EXPLORER = "https://testnet.monadexplorer.com";
@@ -22,35 +47,48 @@ const ABI = [
  "function getAgent(uint256) view returns (tuple(address owner,string name,string metadataURI,uint64 registeredAt,bool active,uint64 feedbackCount,uint128 scoreSum))",
  "function reputation(uint256) view returns (uint256 avgX100,uint256 count)",
  "function getFeedback(uint256) view returns (tuple(address reviewer,uint256 reviewerAgentId,uint8 score,string tag,string evidenceURI,uint64 timestamp)[])"];
-const DEFAULT_ADDRESS = "0x04d98b621fcD72388e7c1259e3b3577cde2Bf079"; // set after deployment
+const DEFAULT_ADDRESS = "0x04d98b621fcD72388e7c1259e3b3577cde2Bf079";
 const MOCK = [
- {id:1,owner:"0x1111111111111111111111111111111111111111",name:"agentstack-planner",metadataURI:"https://agentstack.tech",registeredAt:1760400000,active:true,avg:8800,count:2,fb:[{reviewer:"0x2222222222222222222222222222222222222222",reviewerAgentId:2,score:92,tag:"task-completed",evidenceURI:"",timestamp:1760403600},{reviewer:"0x3333333333333333333333333333333333333333",reviewerAgentId:0,score:84,tag:"good-plan",evidenceURI:"",timestamp:1760407200}]},
- {id:2,owner:"0x2222222222222222222222222222222222222222",name:"agentstack-executor",metadataURI:"https://agentstack.tech/mcp",registeredAt:1760401000,active:true,avg:7500,count:1,fb:[{reviewer:"0x1111111111111111111111111111111111111111",reviewerAgentId:1,score:75,tag:"slow-but-correct",evidenceURI:"",timestamp:1760405000}]}];
+ {id:1,owner:"0x1111111111111111111111111111111111111111",name:"demo-planner",metadataURI:"https://agentstack.tech",registeredAt:1760400000,active:true,avg:8800,count:2,fb:[{reviewer:"0x2222222222222222222222222222222222222222",reviewerAgentId:2,score:92,tag:"task-completed",evidenceURI:"",timestamp:1760403600},{reviewer:"0x3333333333333333333333333333333333333333",reviewerAgentId:0,score:84,tag:"good-plan",evidenceURI:"",timestamp:1760407200}]},
+ {id:2,owner:"0x2222222222222222222222222222222222222222",name:"demo-executor",metadataURI:"https://agentstack.tech/mcp",registeredAt:1760401000,active:true,avg:7500,count:1,fb:[{reviewer:"0x1111111111111111111111111111111111111111",reviewerAgentId:1,score:75,tag:"slow-but-correct",evidenceURI:"",timestamp:1760405000}]}];
 const esc = v => String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const safeUrl = u => /^https?:\/\//i.test(u) ? esc(u) : "";
 const $ = id => document.getElementById(id);
 const short = a => a.slice(0,6)+"…"+a.slice(-4);
-const date = t => new Date(Number(t)*1000).toISOString().slice(0,16).replace("T"," ");
-function render(agents, live, addr){
- $("status").innerHTML = live ? `Live from <a href="${EXPLORER}/address/${esc(addr)}" target="_blank">${short(addr)}</a> · ${agents.length} agents` : "Demo data (no contract address given). Add <code>?address=0x…</code> or paste it above.";
- $("list").innerHTML = agents.map(a=>`<div class="card"><span class="score">${a.count? (a.avg/100).toFixed(1):"—"}</span>
- <b>#${a.id} ${esc(a.name)}</b> <span class="badge">${a.active?"active":"inactive"}</span> <span class="badge">${a.count} reviews</span><br>
- <span class="muted">owner ${live?`<a target="_blank" href="${EXPLORER}/address/${a.owner}">${short(a.owner)}</a>`:short(a.owner)} · registered ${date(a.registeredAt)} · ${esc(a.metadataURI)}</span>
- ${a.fb.map(f=>`<div class="fb">★ ${f.score} by ${short(f.reviewer)}${Number(f.reviewerAgentId)?` (agent #${f.reviewerAgentId})`:""} · ${esc(f.tag)} · ${date(f.timestamp)} ${safeUrl(f.evidenceURI)?`<a rel="noopener" href="${safeUrl(f.evidenceURI)}" target="_blank">evidence</a>`:""}</div>`).join("")}</div>`).join("");
+const date = t => new Date(Number(t)*1000).toISOString().slice(0,16).replace("T"," ")+" UTC";
+const color = s => s>=8000?"var(--ok)":s>=5000?"var(--warn)":"var(--bad)";
+const addrLink = (a,live) => live?`<a target="_blank" rel="noopener" href="${EXPLORER}/address/${esc(a)}">${short(a)}</a>`:short(a);
+function render(agents, live, addr, block){
+ $("mode").innerHTML = live
+  ? `<span class="pill live">● LIVE on Monad testnet</span> <span class="muted">Contract <a target="_blank" rel="noopener" href="${EXPLORER}/address/${esc(addr)}">${esc(addr)}</a> (source verified)</span>`
+  : `<span class="pill demo">DEMO DATA</span> <span class="muted">Could not read a contract; showing sample data.</span>`;
+ const fbs = agents.reduce((s,a)=>s+a.count,0), rated = agents.filter(a=>a.count);
+ $("sAgents").textContent = agents.length; $("sFb").textContent = fbs;
+ $("sAvg").textContent = rated.length ? (rated.reduce((s,a)=>s+a.avg,0)/rated.length/100).toFixed(1) : "–";
+ $("sBlock").textContent = block ?? "–";
+ $("status").textContent = agents.length ? "" : "No agents registered yet.";
+ $("list").innerHTML = agents.map(a=>`<div class="card"><span class="score" style="color:${a.count?color(a.avg):"#777"}">${a.count?(a.avg/100).toFixed(1):"—"}<small>${a.count} review${a.count===1?"":"s"}</small></span>
+ <b>#${a.id} ${esc(a.name)}</b> <span class="pill">${a.active?"active":"inactive"}</span><br>
+ <span class="muted">owner ${addrLink(a.owner,live)} · registered ${date(a.registeredAt)} · ${safeUrl(a.metadataURI)?`<a target="_blank" rel="noopener" href="${safeUrl(a.metadataURI)}">${esc(a.metadataURI)}</a>`:esc(a.metadataURI)}</span>
+ ${a.fb.map(f=>`<div class="fb">★ <b>${f.score}</b> from ${addrLink(f.reviewer,live)}${Number(f.reviewerAgentId)?` (agent #${f.reviewerAgentId})`:""} · ${esc(f.tag)} · ${date(f.timestamp)} ${safeUrl(f.evidenceURI)?`· <a rel="noopener" target="_blank" href="${safeUrl(f.evidenceURI)}">evidence</a>`:""}</div>`).join("")}</div>`).join("");
 }
-window.load = async function(){
+async function load(){
  const addr = $("addr").value.trim();
- if(addr && !ethers.isAddress(addr)){ $("status").textContent="Invalid address"; return; }
  if(!addr){ render(MOCK,false); return; }
+ if(!ethers.isAddress(addr)){ $("status").textContent="Invalid address"; return; }
  $("status").textContent = "Loading from Monad testnet…";
  try{
-  const c = new ethers.Contract(addr, ABI, new ethers.JsonRpcProvider(RPC));
-  const n = Number(await c.agentCount()); const out=[];
-  for(let i=1;i<=n;i++){ const [a,r,fb] = await Promise.all([c.getAgent(i),c.reputation(i),c.getFeedback(i)]);
-   out.push({id:i,owner:a.owner,name:a.name,metadataURI:a.metadataURI,registeredAt:a.registeredAt,active:a.active,avg:Number(r.avgX100),count:Number(r.count),fb:fb.map(f=>({reviewer:f.reviewer,reviewerAgentId:f.reviewerAgentId,score:Number(f.score),tag:f.tag,evidenceURI:f.evidenceURI,timestamp:f.timestamp}))}); }
-  out.sort((x,y)=>y.avg-x.avg); render(out,true,addr);
- }catch(e){ $("status").textContent = "Error: "+e.message; }
-};
+  const p = new ethers.JsonRpcProvider(RPC, 10143, {staticNetwork:true});
+  const c = new ethers.Contract(addr, ABI, p);
+  const [nRaw, block] = await Promise.all([c.agentCount(), p.getBlockNumber()]);
+  const ids = Array.from({length:Number(nRaw)},(_,i)=>i+1);
+  const out = await Promise.all(ids.map(async i=>{ const [a,r,fb] = await Promise.all([c.getAgent(i),c.reputation(i),c.getFeedback(i)]);
+   return {id:i,owner:a.owner,name:a.name,metadataURI:a.metadataURI,registeredAt:a.registeredAt,active:a.active,avg:Number(r.avgX100),count:Number(r.count),
+    fb:fb.map(f=>({reviewer:f.reviewer,reviewerAgentId:f.reviewerAgentId,score:Number(f.score),tag:f.tag,evidenceURI:f.evidenceURI,timestamp:f.timestamp}))}; }));
+  out.sort((x,y)=>y.avg-x.avg||x.id-y.id); render(out,true,addr,block);
+ }catch(e){ console.error(e); render(MOCK,false); $("status").textContent = "RPC error: "+(e.shortMessage||e.message); }
+}
+$("loadBtn").addEventListener("click", load);
 $("addr").value = new URLSearchParams(location.search).get("address") || DEFAULT_ADDRESS;
 load();
 </script></body></html>
