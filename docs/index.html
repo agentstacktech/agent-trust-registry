@@ -26,6 +26,9 @@ pre{background:#140f26;border:1px solid var(--line);border-radius:8px;padding:12
  <div class="stat"><span class="muted">Latest block</span><b id="sBlock">–</b></div>
 </div>
 <h2>Agents by trust score</h2>
+<h2>Look up an agent</h2>
+<div class="bar"><input id="lookupId" type="number" min="1" placeholder="Agent id (e.g. 1)"><button id="lookupBtn">Check trust</button></div>
+<div id="lookup"></div>
 <div id="status" class="muted"></div><div id="list"></div>
 <div class="bar"><input id="addr" placeholder="Registry contract address (0x...)"><button id="loadBtn">Load</button></div>
 <div class="muted">Source: <a href="https://github.com/agentstacktech/agent-trust-registry" target="_blank" rel="noopener">github.com/agentstacktech/agent-trust-registry</a> · RPC <code>testnet-rpc.monad.xyz</code> · chainId 10143</div>
@@ -89,6 +92,24 @@ async function load(){
  }catch(e){ console.error(e); render(MOCK,false); $("status").textContent = "RPC error: "+(e.shortMessage||e.message); }
 }
 $("loadBtn").addEventListener("click", load);
+async function lookup(){
+ const id = Number($("lookupId").value), addr = $("addr").value.trim() || DEFAULT_ADDRESS, out = $("lookup");
+ if(!Number.isInteger(id) || id<1){ out.innerHTML='<p class="muted">Enter a positive agent id.</p>'; return; }
+ out.innerHTML='<p class="muted">Reading agent #'+id+'…</p>';
+ try{
+  const c = new ethers.Contract(addr, ABI, new ethers.JsonRpcProvider(RPC, 10143, {staticNetwork:true}));
+  const [a,r,fb] = await Promise.all([c.getAgent(id),c.reputation(id),c.getFeedback(id)]);
+  const avg=Number(r.avgX100), n=Number(r.count);
+  const badge = location.href.replace(/index\.html.*$|\?.*$|#.*$/,"").replace(/\/?$/,"/")+"badge.html?id="+id;
+  out.innerHTML = `<div class="card"><span class="score" style="color:${n?color(avg):"#777"}">${n?(avg/100).toFixed(1):"—"}<small>${n} review${n===1?"":"s"}</small></span>
+  <b>#${id} ${esc(a.name)}</b> <span class="pill">${a.active?"active":"inactive"}</span> <span class="pill" style="background:${n&&avg>=7000&&a.active?"#064e3b":"#7f1d1d"}">trust-gate ≥70: ${n&&avg>=7000&&a.active?"ALLOW":"BLOCK"}</span><br>
+  <span class="muted">owner ${addrLink(a.owner,true)} · registered ${date(a.registeredAt)}</span>
+  ${fb.map(f=>`<div class="fb">★ <b>${Number(f.score)}</b> from ${addrLink(f.reviewer,true)} · ${esc(f.tag)} · ${date(f.timestamp)}</div>`).join("")||'<div class="fb muted">No feedback yet.</div>'}
+  <div class="fb">Embed badge: <code>&lt;iframe src="${esc(badge)}" width="260" height="40" style="border:0"&gt;&lt;/iframe&gt;</code> · <a href="badge.html?id=${id}" target="_blank" rel="noopener">open badge</a></div></div>`;
+ }catch(e){ out.innerHTML='<p class="muted">Agent #'+id+' not found or RPC error: '+esc(e.shortMessage||e.message)+'</p>'; }
+}
+$("lookupBtn").addEventListener("click", lookup);
+{ const q = new URLSearchParams(location.search).get("id"); if(q){ $("lookupId").value=q; lookup(); } }
 $("addr").value = new URLSearchParams(location.search).get("address") || DEFAULT_ADDRESS;
 load();
 </script></body></html>

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Agent trust badge · Monad</title>
+<style>body{margin:0;font:13px system-ui,sans-serif;background:transparent}
+a{display:inline-flex;text-decoration:none;border-radius:4px;overflow:hidden;color:#fff}
+.l{background:#3b2f63;padding:5px 8px}.r{padding:5px 8px;font-weight:700;background:#555}</style></head>
+<body><a id="b" target="_blank" rel="noopener" href="index.html"><span class="l" id="l">agent trust</span><span class="r" id="r">…</span></a>
+<script type="module">
+// Embeddable trust badge: badge.html?id=<agentId>[&address=0x...]
+import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.min.js";
+const q = new URLSearchParams(location.search), id = Number(q.get("id"));
+const addr = ethers.isAddress(q.get("address")||"") ? q.get("address") : "0x04d98b621fcD72388e7c1259e3b3577cde2Bf079";
+const r = document.getElementById("r"), b = document.getElementById("b"), l = document.getElementById("l");
+b.href = `index.html?id=${id}&address=${addr}`;
+const ABI = ["function getAgent(uint256) view returns (tuple(address owner,string name,string metadataURI,uint64 registeredAt,bool active,uint64 feedbackCount,uint128 scoreSum))",
+ "function reputation(uint256) view returns (uint256 avgX100,uint256 count)"];
+if(!Number.isInteger(id) || id < 1){ r.textContent = "invalid id"; }
+else try{
+ const c = new ethers.Contract(addr, ABI, new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz", 10143, {staticNetwork:true}));
+ const [a, rep] = await Promise.all([c.getAgent(id), c.reputation(id)]);
+ const avg = Number(rep.avgX100), n = Number(rep.count);
+ l.textContent = `#${id} ${a.name.slice(0,24)}`;
+ r.textContent = n ? `${(avg/100).toFixed(1)} · ${n} review${n===1?"":"s"}` : "unrated";
+ r.style.background = !a.active ? "#555" : !n ? "#555" : avg>=8000 ? "#059669" : avg>=5000 ? "#d97706" : "#dc2626";
+ if(!a.active) r.textContent += " · inactive";
+}catch(e){ r.textContent = "unknown agent"; }
+</script></body></html>
