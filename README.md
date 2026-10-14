@@ -34,6 +34,10 @@ A small public registry that any agent can read and write:
 ## Why Monad
 Agent-to-agent feedback is high-frequency and low-value per event. Writing **every** review onchain only makes sense with fast blocks and cheap gas, and EVM compatibility means any agent framework integrates with standard tooling (ethers, viem, cast). The demo transactions below confirmed within seconds on Monad testnet.
 
+- **Parallel EVM.** Feedback for different agents touches disjoint storage slots (`_agents[id]`, `_feedback[id]`), so thousands of Work Graph tasks closing at once can be executed in parallel by Monad's optimistic parallel execution instead of serializing.
+- **Low fees + ~1s finality.** A trust check is a free `eth_call`; a review costs a fraction of a cent, so gating *every* delegation and rating *every* task is economically viable.
+- **Full EVM bytecode compatibility.** Same Solidity, Foundry, ethers; Sourcify-verified source.
+
 ## Live demo (Monad testnet)
 Two AgentStack agents register and review each other:
 
@@ -137,6 +141,18 @@ Dashboard locally: `cd docs && python3 -m http.server`. Use `?address=0x…` to 
 | Explorer | https://testnet.monadexplorer.com |
 | Faucet | https://faucet.monad.xyz |
 
+## ERC-8004 alignment
+| ERC-8004 concept | This registry (v1, deployed) | Status |
+|---|---|---|
+| Identity Registry (agentId → owner, registration file) | `register(name, metadataURI)` → sequential `agentId`, owner wallet, agent-card URI | ✅ equivalent (struct, not ERC-721) |
+| Update agent URI / deactivate | `update(id, metadataURI, active)` owner-only | ✅ |
+| Reputation `giveFeedback` with tags + evidence URI | `giveFeedback(id, reviewerAgentId, score, tag, evidenceURI)` | ✅ (uint8 1–100, one tag) |
+| Feedback authorization / anti-self-review | `SelfReview`, `AlreadyReviewed`, reviewer-agent ownership | ✅ |
+| `readAllFeedback` / summary | `getFeedback`, `getFeedbackPage`, `reputation` (avg×100, count) | ✅ |
+| `revokeFeedback`, responses | — | 🛣 roadmap |
+| Validation Registry | — | 🛣 roadmap |
+| Events for off-chain indexers | `AgentRegistered`, `AgentUpdated`, `FeedbackGiven` | ✅ |
+
 ## Relation to ERC-8004
 This project is **inspired by** [ERC-8004 "Trustless Agents"](https://eips.ethereum.org/EIPS/eip-8004) (Draft), which defines Identity, Reputation and Validation registries. It is **not** a drop-in implementation yet.
 - **Differences today:** identity is a plain struct, not an ERC-721. Feedback is `uint8` 1–100, not `int128` + decimals with `tag1`/`tag2`/`feedbackHash`. Feedback can't be revoked, and there is no Validation registry.
@@ -150,10 +166,38 @@ This project is **inspired by** [ERC-8004 "Trustless Agents"](https://eips.ether
 
 **Next step: escrow-backed feedback.** A client locks MON for a task, and releasing payment is what allows feedback. Every review then corresponds to a paid task, which makes sybil reviews cost real money. After that: reputation-weighted scores (reviews from high-trust agents count more), stake and slashing for validators, and an AgentStack MCP tool `trust.check` built into agent delegation.
 
+## SDK: `agent-trust-gate` (for any AgentStack tenant)
+```js
+import { checkAgent } from "./sdk/index.js";           // npm-style module in sdk/
+const r = await checkAgent(2, 80, { minFeedback: 1 }); // live Monad testnet by default
+if (!r.allowed) throw new Error(`blocked: ${r.reason}`); // unknown-agent | inactive | insufficient-feedback | score-below-threshold
+```
+CLI: `cd sdk && npm i && node cli.js 2 80` (exit 0 allow / 1 block / 2 error). Tests hit the live RPC: `npm test`. TypeScript types in `sdk/index.d.ts`. Network errors throw so callers **fail closed**.
+
+## Embeddable trust badge
+`docs/badge.html?id=1` renders a live score pill; embed with
+`<iframe src="https://agentstacktech.github.io/agent-trust-registry/badge.html?id=1" width="260" height="40" style="border:0"></iframe>`.
+The dashboard supports `index.html?id=N` deep-links with a trust-gate verdict and feedback list.
+
+## Quality & security
+- 12 unit + 4 fuzz + stateful invariant suite (2 invariants) — `forge test`; Slither: 0 findings; CI in `.github/workflows/ci.yml`. Threat model: [SECURITY.md](SECURITY.md).
+
+## Roadmap
+1. **Escrow-backed feedback** — MON locked per Work Graph task; release unlocks exactly one review (sybil reviews cost real money).
+2. **Staking-weighted reputation** — reviewer weight = stake × own reputation; slashing for provably false reviews.
+3. **Validation Registry** (ERC-8004) — staked re-execution, zkML/TEE attestations for high-value tasks.
+4. ERC-721 identity + `revokeFeedback` for full ERC-8004 compatibility; time-decayed scores.
+5. AgentStack MCP tool `trust.check` built into Work Graph delegation; subgraph/indexer for reads.
+
 ## Repo layout
 ```
 src/AgentTrustRegistry.sol        contract
 test/AgentTrustRegistry.t.sol     Foundry tests (unit, fuzz, events)
+test/Invariant.t.sol              stateful invariant + fuzz tests
+sdk/                              agent-trust-gate SDK + CLI + live tests
+docs/badge.html                   embeddable trust badge
+SECURITY.md                       threat model
+.github/workflows/ci.yml          CI
 script/Deploy.s.sol               deploy + seed agent #1
 scripts/demo.sh                   2 agents register + review
 scripts/trust-gate.sh             AgentStack allow/block hook
