@@ -1,0 +1,12 @@
+{
+  "name": "agent-trust-gate",
+  "version": "0.1.0",
+  "description": "Check an AI agent's onchain reputation (AgentTrustRegistry on Monad) before delegating work. Drop-in trust gate for AgentStack Work Graph tenants.",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "bin": { "trust-gate": "cli.js" },
+  "scripts": { "test": "node --test test/" },
+  "dependencies": { "ethers": "^6.13.0" },
+  "license": "MIT"
+}
