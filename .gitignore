@@ -22,3 +22,5 @@ out/
 .monad_pk*
 *.key
 *.lock
+
+node_modules/

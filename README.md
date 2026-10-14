@@ -94,11 +94,11 @@ flowchart LR
 - **Live mode.** Sends the payloads to AgentStack MCP and broadcasts the feedback tx.
 
 ```bash
-npm i ethers tsx
-npx tsx examples/agentstack-trust-gate.ts                    # ALLOW agent #2 (85 ≥ 80) → full flow, simulated write
-npx tsx examples/agentstack-trust-gate.ts --agent 2 --min 90 # BLOCK (85 < 90) → no delegation, exit 1
+cd examples && npm install    # ethers + tsx (examples/package.json)
+npx tsx agentstack-trust-gate.ts                    # ALLOW agent #2 (85 ≥ 80) → full flow, simulated write
+npx tsx agentstack-trust-gate.ts --agent 2 --min 90 # BLOCK (85 < 90) → no delegation, exit 1
 AGENTSTACK_API_KEY=... AGENTSTACK_PROJECT_ID=... REVIEWER_PK=0x<testnet> REVIEWER_AGENT_ID=1 \
-  npx tsx examples/agentstack-trust-gate.ts --live --node <workGraphNodeId> --agent 2
+  npx tsx agentstack-trust-gate.ts --live --node <workGraphNodeId> --agent 2
 ```
 
 **Shell hook** for CI, cron or any agent runtime (exit 0 = allow, 1 = block, 2 = error):
@@ -115,9 +115,9 @@ AGENTSTACK_API_KEY=... AGENTSTACK_PROJECT_ID=... REVIEWER_PK=0x<testnet> REVIEWE
 
 ## Quickstart
 ```bash
-curl -L https://foundry.paradigm.xyz | bash && foundryup
+curl -L https://foundry.paradigm.xyz | bash && ~/.foundry/bin/foundryup   # then open a new shell (or add ~/.foundry/bin to PATH)
 git clone --recursive https://github.com/agentstacktech/agent-trust-registry && cd agent-trust-registry
-forge test -vv            # 12 tests incl. fuzz + event checks
+forge build && forge test -vv   # unit + fuzz + invariant suites
 ```
 Local end-to-end with anvil:
 ```bash
@@ -166,13 +166,27 @@ This project is **inspired by** [ERC-8004 "Trustless Agents"](https://eips.ether
 
 **Next step: escrow-backed feedback.** A client locks MON for a task, and releasing payment is what allows feedback. Every review then corresponds to a paid task, which makes sybil reviews cost real money. After that: reputation-weighted scores (reviews from high-trust agents count more), stake and slashing for validators, and an AgentStack MCP tool `trust.check` built into agent delegation.
 
+## Register your agent & leave feedback (agent owners)
+Use a **testnet-only** key funded from https://faucet.monad.xyz. Each tx costs a fraction of testnet MON.
+```bash
+R=0x04d98b621fcD72388e7c1259e3b3577cde2Bf079; RPC=https://testnet-rpc.monad.xyz
+# 1. Register (name and metadataURI, e.g. your agent card JSON). Your new id is the last one in agentsOf(you).
+cast send $R "register(string,string)" "my-agent" "https://example.com/agent.json" --rpc-url $RPC --private-key $PRIVATE_KEY
+cast call $R "agentsOf(address)(uint256[])" $(cast wallet address --private-key $PRIVATE_KEY) --rpc-url $RPC
+# 2. Review another agent: giveFeedback(agentId, reviewerAgentId (0 = none, or your own agent id), score 1..100, tag, evidenceURI)
+cast send $R "giveFeedback(uint256,uint256,uint8,string,string)" 2 0 90 "task-completed" "https://example.com/evidence" --rpc-url $RPC --private-key $PRIVATE_KEY
+# 3. Update metadata / deactivate (owner only)
+cast send $R "update(uint256,string,bool)" <yourId> "https://example.com/agent-v2.json" true --rpc-url $RPC --private-key $PRIVATE_KEY
+```
+The contract rejects self-review, duplicate reviews from one address, scores outside 1..100, and a `reviewerAgentId` you don't own.
+
 ## SDK: `agent-trust-gate` (for any AgentStack tenant)
 ```js
 import { checkAgent } from "./sdk/index.js";           // npm-style module in sdk/
 const r = await checkAgent(2, 80, { minFeedback: 1 }); // live Monad testnet by default
 if (!r.allowed) throw new Error(`blocked: ${r.reason}`); // unknown-agent | inactive | insufficient-feedback | score-below-threshold
 ```
-CLI: `cd sdk && npm i && node cli.js 2 80` (exit 0 allow / 1 block / 2 error). Tests hit the live RPC: `npm test`. TypeScript types in `sdk/index.d.ts`. Network errors throw so callers **fail closed**.
+CLI: `cd sdk && npm ci && node cli.js 2 80` (exit 0 allow / 1 block / 2 error). Tests hit the live RPC: `npm test`. TypeScript types in `sdk/index.d.ts`. Network errors throw so callers **fail closed**.
 
 ## Embeddable trust badge
 `docs/badge.html?id=1` renders a live score pill; embed with

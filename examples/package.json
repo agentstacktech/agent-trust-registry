@@ -1,0 +1,9 @@
+{
+  "name": "agent-trust-registry-examples",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gate": "tsx agentstack-trust-gate.ts"
+  },
+  "dependencies": { "ethers": "^6.13.0", "tsx": "^4.19.0" }
+}

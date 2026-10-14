@@ -89,7 +89,7 @@ async function load(){
    return {id:i,owner:a.owner,name:a.name,metadataURI:a.metadataURI,registeredAt:a.registeredAt,active:a.active,avg:Number(r.avgX100),count:Number(r.count),
     fb:fb.map(f=>({reviewer:f.reviewer,reviewerAgentId:f.reviewerAgentId,score:Number(f.score),tag:f.tag,evidenceURI:f.evidenceURI,timestamp:f.timestamp}))}; }));
   out.sort((x,y)=>y.avg-x.avg||x.id-y.id); render(out,true,addr,block);
- }catch(e){ console.error(e); render(MOCK,false); $("status").textContent = "RPC error: "+(e.shortMessage||e.message); }
+ }catch(e){ console.error(e); render(MOCK,false); $("status").textContent = "Monad RPC unreachable — showing cached DEMO data. ("+(e.shortMessage||e.message)+")"; }
 }
 $("loadBtn").addEventListener("click", load);
 async function lookup(){
@@ -106,10 +106,12 @@ async function lookup(){
   <span class="muted">owner ${addrLink(a.owner,true)} · registered ${date(a.registeredAt)}</span>
   ${fb.map(f=>`<div class="fb">★ <b>${Number(f.score)}</b> from ${addrLink(f.reviewer,true)} · ${esc(f.tag)} · ${date(f.timestamp)}</div>`).join("")||'<div class="fb muted">No feedback yet.</div>'}
   <div class="fb">Embed badge: <code>&lt;iframe src="${esc(badge)}" width="260" height="40" style="border:0"&gt;&lt;/iframe&gt;</code> · <a href="badge.html?id=${id}" target="_blank" rel="noopener">open badge</a></div></div>`;
- }catch(e){ out.innerHTML='<p class="muted">Agent #'+id+' not found or RPC error: '+esc(e.shortMessage||e.message)+'</p>'; }
+ }catch(e){ const unknown = String(e.data||e?.info?.error?.data||"").startsWith("0x0df2949d") || /UnknownAgent|0x0df2949d|unknown custom error/.test(String(e.message));
+  out.innerHTML = unknown ? '<p class="muted">Agent #'+id+' is not registered on this registry. Trust-gate verdict: <b>BLOCK</b> (unknown agents fail closed).</p>'
+   : '<p class="muted">Could not reach Monad testnet RPC ('+esc(e.shortMessage||e.message)+'). Try again in a moment.</p>'; }
 }
 $("lookupBtn").addEventListener("click", lookup);
-{ const q = new URLSearchParams(location.search).get("id"); if(q){ $("lookupId").value=q; lookup(); } }
 $("addr").value = new URLSearchParams(location.search).get("address") || DEFAULT_ADDRESS;
+{ const q = new URLSearchParams(location.search).get("id"); if(q){ $("lookupId").value=q; lookup(); } }
 load();
 </script></body></html>
