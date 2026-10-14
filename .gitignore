@@ -21,3 +21,4 @@ out/
 *.pk
 .monad_pk*
 *.key
+*.lock

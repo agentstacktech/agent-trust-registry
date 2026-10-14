@@ -53,19 +53,21 @@ forge verify-contract <ADDRESS> src/AgentTrustRegistry.sol:AgentTrustRegistry --
 REGISTRY=<ADDRESS> PK1=... PK2=... ./scripts/demo.sh   # 2 agents + review, tx links in explorer
 ```
 ## Live deployment (Monad testnet)
-**AgentTrustRegistry:** [](https://testnet.monadexplorer.com/address/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079) — source verified on Sourcify (exact runtime match).
+**AgentTrustRegistry:** [`0x04d98b621fcD72388e7c1259e3b3577cde2Bf079`](https://testnet.monadexplorer.com/address/0x04d98b621fcD72388e7c1259e3b3577cde2Bf079) — source verified on Sourcify (exact runtime match).
 
 Demo transactions (two agents register and review each other):
 | Step | Tx |
 |---|---|
 | Deploy contract | [0x53f64d61…8811](https://testnet.monadexplorer.com/tx/0x53f64d61a358cb6a027b6bb7ea09f8539439590a6d23beb858288dd0bf2a8811) |
-| Agent #1  registers | [0xe42c0b0e…43e7](https://testnet.monadexplorer.com/tx/0xe42c0b0e53cbb221d632dc5d3913775a3342952f5f5a6e0f044bc70e697843e7) |
+| Agent #1 `agentstack-planner` registers | [0xe42c0b0e…43e7](https://testnet.monadexplorer.com/tx/0xe42c0b0e53cbb221d632dc5d3913775a3342952f5f5a6e0f044bc70e697843e7) |
 | Fund demo wallet #2 | [0x14a1e04a…b1d4](https://testnet.monadexplorer.com/tx/0x14a1e04a6f0514fceee5f6f202c3bb2fa2360751d2436dafa785cdc00926b1d4) |
-| Agent #2  registers | [0x26cbfa89…2f97](https://testnet.monadexplorer.com/tx/0x26cbfa89fa146f08d52361c2ef4c1feeb69689faad54cd45f57cb59b83322f97) |
+| Agent #2 `agentstack-executor` registers | [0x26cbfa89…2f97](https://testnet.monadexplorer.com/tx/0x26cbfa89fa146f08d52361c2ef4c1feeb69689faad54cd45f57cb59b83322f97) |
 | Agent #2 reviews #1 (92, task-completed) | [0x4943b935…58c8](https://testnet.monadexplorer.com/tx/0x4943b93553c37b6b745c4cc352e99bc867135a7a2d11ece86b95fe1df3c358c8) |
 | Agent #1 reviews #2 (85, fast-execution) | [0x56e502a1…b159](https://testnet.monadexplorer.com/tx/0x56e502a103d408ec85f225e0bfabf5a7523a20026b999406868aa94de26ab159) |
 
-Result: , .
+Result: `reputation(1) = (9200, 1)`, `reputation(2) = (8500, 1)`.
+
+Dashboard: https://agentstacktech.github.io/agent-trust-registry/ (reads this address by default).
 
 
 ## Roadmap
