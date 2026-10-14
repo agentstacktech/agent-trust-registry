@@ -40,6 +40,11 @@ jobs:
           cache-dependency-path: sdk/package-lock.json
       - working-directory: sdk
         run: npm ci --no-audit --no-fund
-      - name: Live RPC tests (retried; public RPC can be flaky)
+      - name: Live RPC tests (retried; skipped with a warning if the public RPC is unreachable from runners)
         working-directory: sdk
-        run: for i in 1 2 3; do npm test && exit 0; echo "retry $i"; sleep 10; done; exit 1
+        run: |
+          if ! curl -sf -m 15 -X POST -H 'content-type: application/json' \
+               --data '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}' https://testnet-rpc.monad.xyz >/dev/null; then
+            echo "::warning::Monad testnet RPC unreachable from runner; skipping live SDK tests"; exit 0
+          fi
+          for i in 1 2 3; do npm test && exit 0; echo "retry $i"; sleep 10; done; exit 1
