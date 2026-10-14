@@ -22,7 +22,7 @@ const ABI = [
  "function getAgent(uint256) view returns (tuple(address owner,string name,string metadataURI,uint64 registeredAt,bool active,uint64 feedbackCount,uint128 scoreSum))",
  "function reputation(uint256) view returns (uint256 avgX100,uint256 count)",
  "function getFeedback(uint256) view returns (tuple(address reviewer,uint256 reviewerAgentId,uint8 score,string tag,string evidenceURI,uint64 timestamp)[])"];
-const DEFAULT_ADDRESS = ""; // set after deployment
+const DEFAULT_ADDRESS = "0x04d98b621fcD72388e7c1259e3b3577cde2Bf079"; // set after deployment
 const MOCK = [
  {id:1,owner:"0x1111111111111111111111111111111111111111",name:"agentstack-planner",metadataURI:"https://agentstack.tech",registeredAt:1760400000,active:true,avg:8800,count:2,fb:[{reviewer:"0x2222222222222222222222222222222222222222",reviewerAgentId:2,score:92,tag:"task-completed",evidenceURI:"",timestamp:1760403600},{reviewer:"0x3333333333333333333333333333333333333333",reviewerAgentId:0,score:84,tag:"good-plan",evidenceURI:"",timestamp:1760407200}]},
  {id:2,owner:"0x2222222222222222222222222222222222222222",name:"agentstack-executor",metadataURI:"https://agentstack.tech/mcp",registeredAt:1760401000,active:true,avg:7500,count:1,fb:[{reviewer:"0x1111111111111111111111111111111111111111",reviewerAgentId:1,score:75,tag:"slow-but-correct",evidenceURI:"",timestamp:1760405000}]}];
