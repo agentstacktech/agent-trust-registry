@@ -7,7 +7,14 @@ import {AgentTrustRegistry} from "../src/AgentTrustRegistry.sol";
 contract AgentTrustRegistryTest is Test {
     event AgentRegistered(uint256 indexed agentId, address indexed owner, string name, string metadataURI);
     event AgentUpdated(uint256 indexed agentId, string metadataURI, bool active);
-    event FeedbackGiven(uint256 indexed agentId, address indexed reviewer, uint256 reviewerAgentId, uint8 score, string tag, string evidenceURI);
+    event FeedbackGiven(
+        uint256 indexed agentId,
+        address indexed reviewer,
+        uint256 reviewerAgentId,
+        uint8 score,
+        string tag,
+        string evidenceURI
+    );
 
     AgentTrustRegistry reg;
     address alice = address(0xA11CE);

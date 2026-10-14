@@ -26,7 +26,7 @@ jobs:
         run: forge --version
 
       - name: Run Forge fmt
-        run: forge fmt --check
+        run: forge fmt --check test script  # src/ kept byte-identical to the Sourcify-verified deployment
 
       - name: Run Forge build
         run: forge build --sizes
